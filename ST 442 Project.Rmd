@@ -1,0 +1,17 @@
+---
+title: "ST 442 Final Project"
+author: "Trevor Hughes"
+date: "December 7, 2019"
+output: pdf_document
+---
+
+```{r claning}
+library(dplyr)
+library(tidyr)
+NHSdem = read.csv("C:\\Users\\treyh\\OneDrive\\Documents\\Documents\\NHSdem.csv")
+NHSques = read.csv("C:\\Users\\treyh\\OneDrive\\Documents\\Documents\\NHSques.csv")
+NHS = inner_join(NHSdem, NHSques, by = "SEQN")
+NHS
+
+```
+
