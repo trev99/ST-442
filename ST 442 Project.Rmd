@@ -5,7 +5,7 @@ date: "December 7, 2019"
 output: pdf_document
 ---
 
-```{r claning}
+```{r cleaning}
 library(dplyr)
 library(tidyr)
 NHSdem = read.csv("C:\\Users\\treyh\\OneDrive\\Documents\\Documents\\NHSdem.csv")
