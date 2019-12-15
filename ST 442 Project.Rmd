@@ -5,13 +5,78 @@ date: "December 7, 2019"
 output: pdf_document
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
 ```{r cleaning}
 library(dplyr)
 library(tidyr)
-NHSdem = read.csv("C:\\Users\\treyh\\OneDrive\\Documents\\Documents\\NHSdem.csv")
-NHSques = read.csv("C:\\Users\\treyh\\OneDrive\\Documents\\Documents\\NHSques.csv")
-NHS = inner_join(NHSdem, NHSques, by = "SEQN")
-NHS
+demographic = read.csv("C:\\Users\\treyh\\OneDrive\\Documents\\Documents\\NHSdem.csv")
+questionnaire = read.csv("C:\\Users\\treyh\\OneDrive\\Documents\\Documents\\NHSques.csv")
 
 ```
 
+
+```{r}
+#Subsetting datasets and renaming variables
+demo_orig_vars <- c("SEQN","RIAGENDR","RIDAGEYR","RIDRETH1","DMDCITZN","DMDEDUC2","DMDMARTL","DMDHHSIZ","INDHHIN2")
+demo_subset <- demographic[demo_orig_vars]
+demo_rename_vars <- c("SEQN","gender","age","race","citizenship","adult_education","marital_status","number_household","HH_income")
+names(demo_subset) <- demo_rename_vars
+
+names(questionnaire)
+q_orig_vars <- c("SEQN","BPQ020","BPQ080","MCQ010","MCQ080","MCQ082","MCQ160F","MCQ220","ALQ101","CBD070","DIQ010","DBQ700","DBD895","FSD032A","HIQ011","HUQ010","IND235","DPQ020","PAQ665","SLD010H","SMQ020","WHQ030","DLQ040","HUQ020")
+q_subset <- questionnaire[q_orig_vars]
+q_rename_vars <- c("SEQN","hypertension","high_cholesterol","asthma","overweight","celiac","stroke","cancer","drinks","groceries","diabetes","diet","meals_out","food_insecurity","insurance","general_health","monthly_income","feel_depressed","moderate_activity","sleep_hours","smoked","weight_status","difficulty_concentrating","health_compared_1year")
+names(q_subset) <- q_rename_vars
+varlist <- data.frame(q_orig_vars,q_rename_vars)
+varlist
+
+#Conscious: Everything
+#Unconscious: Gender, age, race, weight status 
+```
+
+```{r}
+library(randomForest)
+library(rattle)
+library(e1071)
+library(caret)
+library(ggplot2)
+#Merging Datasets
+data <- merge(demo_subset,q_subset,by="SEQN")
+head(data)
+summary(data)
+correlation = cor(data, use = "complete.obs")
+correlation
+correlation[(correlation > 0.3 & correlation < 1) | (correlation < -0.3 & correlation > -1)]
+data
+cor(DATA_final)
+
+data_recode = filter(data, hypertension<=6 & high_cholesterol<=6 & asthma<=6 & overweight<=6 & celiac<=6 & stroke<=6 & cancer<=6 & drinks<=6 & diabetes<=6 & diet<=6 & food_insecurity<=6 & insurance<=6 & general_health<=6 & feel_depressed<=6  & moderate_activity<=6 & smoked<=6 & weight_status<=6 & difficulty_concentrating<=6 & health_compared_1year <=6, HH_income<=66 & groceries<=666666 & meals_out<=5000 & monthly_income<=66 & sleep_hours <=66 & marital_status<=66)
+
+data
+summary(data_recode)
+
+DATA_final = na.omit(data_recode)
+Data_tree_set = DATA_final[]
+#Data trees
+DATA_tree <- train(factor(cancer) ~ age+gender+high_cholesterol+hypertension , method = "rpart", data = DATA_final, trControl = trainControl(method = "cv"))
+fancyRpartPlot(DATA_tree$finalModel, sub = "")
+DATA_tree
+
+conf.matrix <- table(DATA_final$cancer, predict(DATA_tree,type="raw"))
+conf.matrix
+
+# Boxplots
+ggplot(data = DATA_final, aes(factor(cancer), age, color = factor(gender))) + stat_boxplot()+facet_wrap(~ race)+labs(title = "Cancer by Race")+xlab("Cancer")+labs(color = "Gender")+ylab("Age")
+ggplot(data = DATA_final, aes(factor(diabetes), age, color = factor(gender))) + stat_boxplot()+facet_wrap(~ race)+labs(title = "Diabetes by Race")+xlab("Diabetes")+labs(color = "Gender")+ylab("Age")
+ggplot(data = DATA_final, aes(factor(high_cholesterol), age, color = factor(gender))) + stat_boxplot()+facet_wrap(~ race)+labs(title = "High Cholesterol by Race")+xlab("High Cholesterol")+labs(color = "Gender")+ylab("Age")
+
+ggplot(data = DATA_final, aes(factor(cancer), HH_income, color = factor(overweight))) + stat_boxplot()+facet_wrap(~ marital_status)+labs(title = "Cancer by Marital Status")+xlab("Cancer")+labs(color = "Overweight")+ylab("Household Income")
+ggplot(data = DATA_final, aes(factor(diabetes), HH_income, color = factor(overweight))) + stat_boxplot()+facet_wrap(~ marital_status)+labs(title = "Diabetes by Marital Status")+xlab("Diabetes")+labs(color = "Overweight")+ylab("Household Income")
+ggplot(data = DATA_final, aes(factor(high_cholesterol), HH_income, color = factor(overweight))) + stat_boxplot()+facet_wrap(~ marital_status)+labs(title = "High Cholesterol by Marital Status")+xlab("High Cholesterol")+labs(color = "Overweight")+ylab("Household Income")
+help("stat_boxplot")
+
+
+```
